@@ -1,5 +1,5 @@
 -- CustomCompassPins by Shinni
-local version = 1.11
+local version = 1.12
 local onlyUpdate = false
 
 if COMPASS_PINS then
@@ -36,9 +36,13 @@ end
 
 function COMPASS_PINS:UpdateVersion()
 	local pins = self.pinManager.pins
+	local data = self.pinManager.pinData
 	self.pinManager = CompassPinManager:New()
-	for pinType, _ in pairs(pins) do
-		self.pinManager:CreatePinType( pinType )
+	if pins then
+		self.pinManager.pins = pins
+	end
+	if data then
+		self.pinManager.pinData = data
 	end
 end
 
@@ -104,7 +108,7 @@ end
 
 function CompassPinManager:Initialize( ... )
 	self.pins = {}
-	self.pinLayouts = {}
+	self.pinData = {}
 	self.defaultAngle = 1
 end
 
@@ -112,30 +116,43 @@ function CompassPinManager:CreatePinType( pinType )
 	self.pins[ pinType ] = {}
 end
 
--- creates a pin of the given pinType at the given location
--- (radius is not implemented yet)
-function CompassPinManager:CreatePin( pinType, pinTag, xLoc, yLoc )
+function CompassPinManager:GetNewPin( data )
 	local pin, pinKey = self:AcquireObject()
-	table.insert( self.pins[ pinType ], pinKey )
-	
+	table.insert( self.pins[ data.pinType ], pinKey )
 	self:ResetPin( pin )
 	pin:SetHandler("OnMouseDown", nil)
 	pin:SetHandler("OnMouseUp", nil)
 	pin:SetHandler("OnMouseEnter", nil)
 	pin:SetHandler("OnMouseExit", nil)
 	
-	pin.xLoc = xLoc
-	pin.yLoc = yLoc
-	pin.pinType = pinType
-	pin.pinTag = pinTag
-	local layout = COMPASS_PINS.pinLayouts[ pinType ]
+	pin.xLoc = data.xLoc
+	pin.yLoc = data.yLoc
+	pin.pinType = data.pinType
+	pin.pinTag = data.pinTag
+	
+	local layout = COMPASS_PINS.pinLayouts[ data.pinType ]
 	local texture = pin:GetNamedChild( "Background" )
 	texture:SetTexture( layout.texture )
+	
+	return pin, pinKey
+end
+-- creates a pin of the given pinType at the given location
+-- (radius is not implemented yet)
+function CompassPinManager:CreatePin( pinType, pinTag, xLoc, yLoc )
+	local data = {}
+	
+	data.xLoc = xLoc
+	data.yLoc = yLoc
+	data.pinType = pinType
+	data.pinTag = pinTag
+	
+	table.insert(self.pinData, data)
 end
 
 function CompassPinManager:RemovePins( pinType )
 	if not pinType then
 		self:ReleaseAllObjects()
+		self.pinData = {}
 		for pinType, _ in pairs( self.pins ) do
 			self.pins[ pinType ] = {}
 		end
@@ -145,6 +162,11 @@ function CompassPinManager:RemovePins( pinType )
 		end
 		for _, pinKey in pairs( self.pins[ pinType ] ) do
 			self:ReleaseObject( pinKey )
+		end
+		for key, data in pairs( self.pinData ) do
+			if data.pinType == pinType then
+				self.pinData[key] = nil
+			end
 		end
 		self.pins[ pinType ] = {}
 	end
@@ -166,32 +188,36 @@ function CompassPinManager:Update( x, y, heading )
 	local xDif, yDif
 	local layout
 	local normalizedDistance
-	for _, pinKeys in pairs( self.pins ) do
-		for _, pinKey in pairs( pinKeys ) do
-			pin = self:GetExistingObject( pinKey )
+	for _, pinData in pairs( self.pinData ) do
+	
+		layout = COMPASS_PINS.pinLayouts[ pinData.pinType ]
+		xDif = x - pinData.xLoc
+		yDif = y - pinData.yLoc
+		normalizedDistance = (xDif * xDif + yDif * yDif) / (layout.maxDistance * layout.maxDistance)
+		if normalizedDistance < 1 then
+				
+			if pinData.pinKey then
+				pin = self:GetExistingObject( pinData.pinKey )
+			else
+				pin, pinData.pinKey = self:GetNewPin( pinData )
+			end
+			
 			if pin then
 				--self:ResetPin( pin )
 				pin:SetHidden( true )
-				layout = COMPASS_PINS.pinLayouts[ pin.pinType ]
-				xDif = x - pin.xLoc
-				yDif = y - pin.yLoc
-				normalizedDistance = (xDif * xDif + yDif * yDif) / (layout.maxDistance * layout.maxDistance)
-				if normalizedDistance < 1 then
-					angle = -math.atan2( xDif, yDif )
-					angle = (angle + heading)
-					if angle > math.pi then
-						angle = angle - 2 * math.pi
-					elseif angle < -math.pi then
-						angle = angle + 2 * math.pi
-					end
+				angle = -math.atan2( xDif, yDif )
+				angle = (angle + heading)
+				if angle > math.pi then
+					angle = angle - 2 * math.pi
+				elseif angle < -math.pi then
+					angle = angle + 2 * math.pi
+				end
 				
-					normalizedAngle = 2 * angle / (layout.FOV or COMPASS_PINS.defaultFOV)
+				normalizedAngle = 2 * angle / (layout.FOV or COMPASS_PINS.defaultFOV)
 					
-					if zo_abs(normalizedAngle) > (layout.maxAngle or self.defaultAngle) then
-						pin:SetHidden( true )
-					else
-					
-					--d(normalizedAngle)
+				if zo_abs(normalizedAngle) > (layout.maxAngle or self.defaultAngle) then
+					pin:SetHidden( true )
+				else
 					
 					pin:ClearAnchors()
 					pin:SetAnchor( CENTER, PARENT, CENTER, 0.5 * PARENT:GetWidth() * normalizedAngle, 0)
@@ -214,8 +240,14 @@ function CompassPinManager:Update( x, y, heading )
 					end
 					
 					-- end for inside maxAngle
-					end --stupid lua has no continue/next in loops >_>
-				end
+				end --stupid lua has no continue/next in loops >_>
+			end
+		else
+			if pinData.pinKey then
+				self:ReleaseObject( pinData.pinKey )
+				pinData.pinKey = nil
+			else
+			
 			end
 		end
 	end
