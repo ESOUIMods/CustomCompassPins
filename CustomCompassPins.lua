@@ -31,8 +31,8 @@ function COMPASS_PINS:New( ... )
 	self.control:SetHandler("OnUpdate", function() self:Update() end )
 	self.version = version
 	self.defaultFOV = FOV
-	--EVENT_MANAGER:RegisterForEvent("CustomCompassPins", EVENT_ZONE_CHANGED, function()
---		self:RefreshPins() end )
+	-- EVENT_MANAGER:RegisterForEvent("CustomCompassPins", EVENT_ZONE_CHANGED, function()
+    -- self:RefreshPins() end )
 	return result
 end
 
