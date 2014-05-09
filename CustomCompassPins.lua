@@ -1,5 +1,5 @@
 -- CustomCompassPins by Shinni
-local version = 1.15
+local version = 1.16
 local onlyUpdate = false
 
 if COMPASS_PINS then
@@ -25,28 +25,28 @@ function COMPASS_PINS:New(...)
    else
       self:Initialize(...)
    end
-
-   local buf = {}
-   local buffer = function()
-      buf.now = GetFrameTimeSeconds()
-      if buf.last == nil then buf.last = buf.now end
-      buf.diff = buf.now - buf.last
-      buf.eval = buf.diff >= 0.5
-      if buf.eval then buf.last = buf.now end
-      return buf.eval
-   end
    
    self.control:SetHidden(false)
+
    self.version = version
    self.defaultFOV = FOV
    self:RefreshDistanceCoefficient()
-   self.control:RegisterForEvent(EVENT_QUEST_POSITION_REQUEST_COMPLETE, --this will be triggered for all tracked quests
+
+   local lastUpdate = 0
+   local lastMap = GetMapTileTexture()
+   self.control:SetHandler("OnUpdate",
       function()
-         if not buffer() then return end
-         self:RefreshDistanceCoefficient()
-         self:RefreshPins()
+         local now = GetFrameTimeMilliseconds()
+         if (now - lastUpdate) >= 10 then
+            self:Update()
+            lastUpdate = now
+            local currentMap = GetMapTileTexture()
+            if currentMap ~= lastMap then
+               self:RefreshDistanceCoefficient()
+               self:RefreshPins()
+            end
+         end
       end)
-   EVENT_MANAGER:RegisterForUpdate("CustomCompassPins_Update", 10, function() self:Update() end) 
 
    return result
 end
@@ -111,11 +111,8 @@ end
 
 -- updates the pins (recalculates the position of the pins)
 function COMPASS_PINS:Update()
-   -- maybe add some delay, because pin update could be to expensive to be calculated every frame
    local heading = GetPlayerCameraHeading()
-   if not heading then
-      return
-   end
+   if not heading then return end
    if heading > math.pi then --normalize heading to [-pi,pi]
       heading = heading - 2 * math.pi
    end
@@ -272,10 +269,10 @@ COMPASS_PINS:New()
 --[[
 example:
 
-COMPASS_PINS:AddCustomPin("myCustomPins",
+COMPASS_PINS:AddCustomPin("myCompassPins",
    function(pinManager)
-      for _, pin in pairs(myData) do
-         pinManager:CreatePin("myCustomPins", pin, pin.x, pin.y)
+      for _, pinTag in pairs(myData) do
+         pinManager:CreatePin("myCompassPins", pinTag, pinTag.x, pinTag.y)
       end
    end,
    { maxDistance = 0.05, texture = "esoui/art/compass/quest_assistedareapin.dds" })
