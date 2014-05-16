@@ -1,5 +1,5 @@
 -- CustomCompassPins by Shinni
-local version = 1.18
+local version = 1.19
 local onlyUpdate = false
 
 if COMPASS_PINS and COMPASS_PINS.version then
@@ -121,6 +121,10 @@ function COMPASS_PINS:Update()
    if not heading then return end
    if heading > math.pi then --normalize heading to [-pi,pi]
       heading = heading - 2 * math.pi
+   end
+
+   if self.distanceCoefficient > 4 then    --fix for invalid map size 
+      self:RefreshDistanceCoefficient()
    end
 
    local x, y = GetMapPlayerPosition("player")
