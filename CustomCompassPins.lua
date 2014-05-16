@@ -1,5 +1,5 @@
 -- CustomCompassPins by Shinni
-local version = 1.16
+local version = 1.17
 local onlyUpdate = false
 
 if COMPASS_PINS then
@@ -25,7 +25,7 @@ function COMPASS_PINS:New(...)
    else
       self:Initialize(...)
    end
-   
+
    self.control:SetHidden(false)
 
    self.version = version
@@ -44,6 +44,7 @@ function COMPASS_PINS:New(...)
             if currentMap ~= lastMap then
                self:RefreshDistanceCoefficient()
                self:RefreshPins()
+               lastMap = currentMap
             end
          end
       end)
@@ -69,7 +70,7 @@ end
 
 -- pinType should be a string eg "skyshard"
 -- pinCallbacks should be a function, it receives the pinManager as argument
--- layout should be table, currently only the key texture is used (which should return a string) 
+-- layout should be table, currently only the key texture is used (which should return a string)
 function COMPASS_PINS:AddCustomPin(pinType, pinCallback, layout)
    self.pinCallbacks[pinType] = pinCallback
    self.pinLayouts[pinType] = layout
@@ -93,15 +94,15 @@ end
 
 function COMPASS_PINS:GetDistanceCoefficient()
    local distanceCoefficient = 1
-     
-   if ZO_WorldMapContainer1 ~= nil then
+
+   if ZO_WorldMapContainer1 and ZO_WorldMapContainer1:IsTextureLoaded() then
       local numTiles = GetMapNumTiles()
       local tileSize = ZO_WorldMapContainer1:GetTextureFileDimensions()
       local mapSize = numTiles * tileSize
-     
+
       distanceCoefficient = 2048 / mapSize
    end
-       
+
    return distanceCoefficient
 end
 
@@ -116,7 +117,7 @@ function COMPASS_PINS:Update()
    if heading > math.pi then --normalize heading to [-pi,pi]
       heading = heading - 2 * math.pi
    end
-   
+
    local x, y = GetMapPlayerPosition("player")
    self.pinManager:Update(x, y, heading)
 end
@@ -127,7 +128,7 @@ end
 function CompassPinManager:New(...)
    local result = ZO_ControlPool.New(self, "ZO_MapPin", PARENT, "Pin")
    result:Initialize(...)
-   
+
    return result
 end
 
@@ -143,28 +144,28 @@ function CompassPinManager:GetNewPin(data)
    pin:SetHandler("OnMouseUp", nil)
    pin:SetHandler("OnMouseEnter", nil)
    pin:SetHandler("OnMouseExit", nil)
-   
+
    pin.xLoc = data.xLoc
    pin.yLoc = data.yLoc
    pin.pinType = data.pinType
    pin.pinTag = data.pinTag
-   
+
    local layout = COMPASS_PINS.pinLayouts[data.pinType]
    local texture = pin:GetNamedChild("Background")
    texture:SetTexture(layout.texture)
-   
+
    return pin, pinKey
 end
 -- creates a pin of the given pinType at the given location
 -- (radius is not implemented yet)
 function CompassPinManager:CreatePin(pinType, pinTag, xLoc, yLoc)
    local data = {}
-   
+
    data.xLoc = xLoc
    data.yLoc = yLoc
    data.pinType = pinType
    data.pinTag = pinTag
-   
+
    table.insert(self.pinData, data)
 end
 
@@ -202,7 +203,7 @@ function CompassPinManager:Update(x, y, heading)
    local normalizedDistance
    local distance
    for _, pinData in pairs(self.pinData) do
-   
+
       layout = COMPASS_PINS.pinLayouts[pinData.pinType]
       distance = layout.maxDistance * COMPASS_PINS.distanceCoefficient
       xDif = x - pinData.xLoc
@@ -214,7 +215,7 @@ function CompassPinManager:Update(x, y, heading)
          else
             pin, pinData.pinKey = self:GetNewPin(pinData)
          end
-         
+
          if pin then
             pin:SetHidden(true)
             angle = -math.atan2(xDif, yDif)
@@ -224,16 +225,16 @@ function CompassPinManager:Update(x, y, heading)
             elseif angle < -math.pi then
                angle = angle + 2 * math.pi
             end
-            
+
             normalizedAngle = 2 * angle / (layout.FOV or COMPASS_PINS.defaultFOV)
-               
+
             if zo_abs(normalizedAngle) > (layout.maxAngle or self.defaultAngle) then
                pin:SetHidden(true)
             else
                pin:ClearAnchors()
                pin:SetAnchor(CENTER, PARENT, CENTER, 0.5 * PARENT:GetWidth() * normalizedAngle, 0)
                pin:SetHidden(false)
-               
+
                if layout.sizeCallback then
                   layout.sizeCallback(pin, angle, normalizedAngle, normalizedDistance)
                else
@@ -243,9 +244,9 @@ function CompassPinManager:Update(x, y, heading)
                      pin:SetDimensions(32, 32)
                   end
                end
-               
+
                pin:SetAlpha(1 - normalizedDistance)
-               
+
                if layout.additionalLayout then
                   layout.additionalLayout[1](pin, angle, normalizedAngle, normalizedDistance)
                end
@@ -276,5 +277,5 @@ COMPASS_PINS:AddCustomPin("myCompassPins",
       end
    end,
    { maxDistance = 0.05, texture = "esoui/art/compass/quest_assistedareapin.dds" })
-   
+
 --]]
