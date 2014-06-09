@@ -1,5 +1,5 @@
 -- CustomCompassPins by Shinni
-local version = 1.23
+local version = 1.24
 local onlyUpdate = false
 
 if COMPASS_PINS and COMPASS_PINS.version then
@@ -57,18 +57,20 @@ function COMPASS_PINS:UpdateVersion()
       self.pinManager.pinData = data
    end
 
-   if self.version == 1.22 then
-      local registry = WORLD_MAP_SCENE.callbackRegistry["StateChange"]
-      if registry then
-         registry[#registry][3] = true
-      end
-
+   if self.version == 1.21 then
       WORLD_MAP_SCENE:RegisterCallback("StateChange",
          function(oldState, newState)
             if newState == SCENE_HIDDEN then
                if(SetMapToPlayerLocation() == SET_MAP_RESULT_MAP_CHANGED) then
                   CALLBACK_MANAGER:FireCallbacks("OnWorldMapChanged")
                end
+            end
+         end)
+   elseif self.version == 1.22 then
+      WORLD_MAP_SCENE:RegisterCallback("StateChange",
+         function(oldState, newState)
+            if newState == SCENE_HIDDEN then
+               CALLBACK_MANAGER:FireCallbacks("OnWorldMapChanged")
             end
          end)
    end
