@@ -1,5 +1,5 @@
 -- CustomCompassPins by Shinni
-local version = 1.24
+local version = 1.25
 local onlyUpdate = false
 
 if COMPASS_PINS and COMPASS_PINS.version then
@@ -43,9 +43,7 @@ function COMPASS_PINS:New(...)
          end
       end)
 
-   if _G["CustomCompassPins_MapChangeDetector"] == nil then
-      self:SetupCallbacks()
-   end
+   self:SetupCallbacks()
 
    return result
 end
@@ -60,7 +58,8 @@ function COMPASS_PINS:UpdateVersion()
    if self.version == 1.21 then
       WORLD_MAP_SCENE:RegisterCallback("StateChange",
          function(oldState, newState)
-            if newState == SCENE_HIDDEN then
+            if self.version ~= version then return end
+            if newState == SCENE_HIDING then
                if(SetMapToPlayerLocation() == SET_MAP_RESULT_MAP_CHANGED) then
                   CALLBACK_MANAGER:FireCallbacks("OnWorldMapChanged")
                end
@@ -69,7 +68,8 @@ function COMPASS_PINS:UpdateVersion()
    elseif self.version == 1.22 then
       WORLD_MAP_SCENE:RegisterCallback("StateChange",
          function(oldState, newState)
-            if newState == SCENE_HIDDEN then
+            if self.version ~= version then return end
+            if newState == SCENE_HIDING then
                CALLBACK_MANAGER:FireCallbacks("OnWorldMapChanged")
             end
          end)
@@ -82,30 +82,31 @@ function COMPASS_PINS:Initialize(...)
    self.pinCallbacks = {}
    self.pinLayouts = {}
    self.pinManager = CompassPinManager:New()
-   self:SetupCallbacks()
 end
 
 function COMPASS_PINS:SetupCallbacks()
-   ZO_WorldMap_AddCustomPin("CustomCompassPins_MapChangeDetector",
-      function()
-         local currentMap = select(3,(GetMapTileTexture()):lower():find("maps/([%w%-]+/[%w%-]+_%w+)"))
-         CALLBACK_MANAGER:FireCallbacks("CustomCompassPins_MapChanged", currentMap)
-      end)
-   ZO_WorldMap_SetCustomPinEnabled(_G["CustomCompassPins_MapChangeDetector"], true)
+   if _G["CustomCompassPins_MapChangeDetector"] == nil then
+      ZO_WorldMap_AddCustomPin("CustomCompassPins_MapChangeDetector",
+         function()
+            local currentMap = select(3,(GetMapTileTexture()):lower():find("maps/([%w%-]+/[%w%-]+_%w+)"))
+            CALLBACK_MANAGER:FireCallbacks("CustomCompassPins_MapChanged", currentMap)
+         end)
+      ZO_WorldMap_SetCustomPinEnabled(_G["CustomCompassPins_MapChangeDetector"], true)
 
-   local function OnMapChanged(currentMap)
-      if self.map ~= currentMap then
-         self:RefreshDistanceCoefficient()
-         self:RefreshPins()
-         self.map = currentMap
-      end
+      CALLBACK_MANAGER:RegisterCallback("CustomCompassPins_MapChanged",
+         function(currentMap)
+            if self.map ~= currentMap then
+               self:RefreshDistanceCoefficient()
+               self:RefreshPins()
+               self.map = currentMap
+            end
+         end)
    end
-
-   CALLBACK_MANAGER:RegisterCallback("CustomCompassPins_MapChanged", OnMapChanged)
 
    WORLD_MAP_SCENE:RegisterCallback("StateChange",
       function(oldState, newState)
-         if newState == SCENE_HIDDEN then
+         if self.version ~= version then return end
+         if newState == SCENE_HIDING then
             if(SetMapToPlayerLocation() == SET_MAP_RESULT_MAP_CHANGED) then
                CALLBACK_MANAGER:FireCallbacks("OnWorldMapChanged")
             end
