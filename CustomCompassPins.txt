@@ -3,9 +3,11 @@
 ; registered trademarks or trademarks of ZeniMax Media Inc. in the United
 ; States and/or other countries. All rights reserved.
 
-## Title: CustomCompassPins v1.29 
-## Version: 1.29
+## Title: CustomCompassPins
 ## Author: Shinni
-## APIVersion: 100014
+## APIVersion: 100025 100026
+## AddOnVersion: 30
+## Version: 1.30
+## IsLibrary: true
 
 CustomCompassPins.lua
