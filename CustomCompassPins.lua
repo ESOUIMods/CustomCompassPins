@@ -1,5 +1,5 @@
 -- CustomCompassPins by Shinni
-local version = 1.25
+local version = 1.26
 local onlyUpdate = false
 
 if COMPASS_PINS and COMPASS_PINS.version then
@@ -54,26 +54,6 @@ function COMPASS_PINS:UpdateVersion()
    if data then
       self.pinManager.pinData = data
    end
-
-   if self.version == 1.21 then
-      WORLD_MAP_SCENE:RegisterCallback("StateChange",
-         function(oldState, newState)
-            if self.version ~= version then return end
-            if newState == SCENE_HIDING then
-               if(SetMapToPlayerLocation() == SET_MAP_RESULT_MAP_CHANGED) then
-                  CALLBACK_MANAGER:FireCallbacks("OnWorldMapChanged")
-               end
-            end
-         end)
-   elseif self.version == 1.22 then
-      WORLD_MAP_SCENE:RegisterCallback("StateChange",
-         function(oldState, newState)
-            if self.version ~= version then return end
-            if newState == SCENE_HIDING then
-               CALLBACK_MANAGER:FireCallbacks("OnWorldMapChanged")
-            end
-         end)
-   end
 end
 
 function COMPASS_PINS:Initialize(...)
@@ -103,15 +83,19 @@ function COMPASS_PINS:SetupCallbacks()
          end)
    end
 
-   WORLD_MAP_SCENE:RegisterCallback("StateChange",
-      function(oldState, newState)
-         if self.version ~= version then return end
-         if newState == SCENE_HIDING then
-            if(SetMapToPlayerLocation() == SET_MAP_RESULT_MAP_CHANGED) then
-               CALLBACK_MANAGER:FireCallbacks("OnWorldMapChanged")
-            end
+   local callback
+   callback = function(oldState, newState)
+      if self.version ~= version then
+         WORLD_MAP_SCENE:UnregisterCallback("StateChange", callback)
+         return
+      end
+      if newState == SCENE_HIDING then
+         if(SetMapToPlayerLocation() == SET_MAP_RESULT_MAP_CHANGED) then
+            CALLBACK_MANAGER:FireCallbacks("OnWorldMapChanged")
          end
-      end)
+      end
+   end
+   WORLD_MAP_SCENE:RegisterCallback("StateChange", callback)
 end
 
 -- pinType should be a string eg "skyshard"
