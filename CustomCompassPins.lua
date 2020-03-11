@@ -1,22 +1,8 @@
 -- CustomCompassPins by Shinni
 local libName, libVersion = "CustomCompassPins", 30
+COMPASS_PINS = {}
 local version = libVersion
 local onlyUpdate = false
-
--- add an empty entry in libstub so votan's addon list recognized this as a library
-if LibStub then
-	LibStub:NewLibrary(libName, libVersion)
-end
-
--- leaving this here in case there are older versions from before the .txt change
-if COMPASS_PINS and COMPASS_PINS.version then
-	if COMPASS_PINS.version >= version then
-		return
-	end
-	onlyUpdate = true
-else
-	COMPASS_PINS = {}
-end
 
 local PARENT = COMPASS.container
 local FOV = math.pi * 0.6
