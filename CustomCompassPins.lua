@@ -1,15 +1,10 @@
 -- CustomCompassPins by Shinni
-local version = 1.29
+local libName, libVersion = "CustomCompassPins", 130
 local onlyUpdate = false
 
--- add an empty entry in libstub so votan's addon list recognized this as a library
-if LibStub then
-	LibStub:NewLibrary("CustomCompassPins", 29)
-end
-
 -- leaving this here in case there are older versions from before the .txt change
-if COMPASS_PINS and COMPASS_PINS.version then
-	if COMPASS_PINS.version >= version then
+if COMPASS_PINS and COMPASS_PINS.libVersion then
+	if COMPASS_PINS.libVersion >= libVersion then
 		return
 	end
 	onlyUpdate = true
@@ -35,7 +30,7 @@ function COMPASS_PINS:New(...)
 
 	self.control:SetHidden(false)
 
-	self.version = version
+	self.libVersion = libVersion
 	self.defaultFOV = FOV
 	self:RefreshDistanceCoefficient()
 
@@ -94,7 +89,7 @@ function COMPASS_PINS:SetupCallbacks()
 
 	local callback
 	callback = function(oldState, newState)
-		if self.version ~= version then
+		if self.libVersion ~= libVersion then
 			WORLD_MAP_SCENE:UnregisterCallback("StateChange", callback)
 			return
 		end
