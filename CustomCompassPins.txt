@@ -4,10 +4,10 @@
 ; States and/or other countries. All rights reserved.
 
 ## Title: CustomCompassPins
-## Version: 1.30
-## AddOnVersion: 30
+## Version: 1.31
+## AddOnVersion: 31
 ## Author: Shinni
-## APIVersion: 100030 100031
+## APIVersion: 100031 100032
 ## IsLibrary: true
 
 CustomCompassPins.lua
