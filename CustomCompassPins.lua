@@ -1,5 +1,5 @@
 -- CustomCompassPins by Shinni
-local libName, libVersion = "CustomCompassPins", 131
+local libName, libVersion = "CustomCompassPins", 31
 local onlyUpdate = false
 
 -- leaving this here in case there are older versions from before the .txt change
