@@ -4,8 +4,8 @@
 ; States and/or other countries. All rights reserved.
 
 ## Title: CustomCompassPins
-## Version: 1.31
-## AddOnVersion: 31
+## Version: 1.32
+## AddOnVersion: 32
 ## Author: Shinni
 ## APIVersion: 100031 100032
 ## IsLibrary: true
