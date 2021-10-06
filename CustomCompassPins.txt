@@ -7,7 +7,7 @@
 ## Version: 1.32
 ## AddOnVersion: 32
 ## Author: Shinni
-## APIVersion: 100031 100032
+## APIVersion: 101031 101032
 ## IsLibrary: true
 
 CustomCompassPins.lua
